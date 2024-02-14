@@ -4,24 +4,16 @@ const ngrok = require('ngrok');
 // replace the value below with the Telegram token you receive from @BotFather
 const token = '6756665185:AAEFnWozMhj7FTNqIAiyeTv8O8DZ-4LojWw';
 
-// Create a temporary bot to get the last update id
-const tempBot = new TelegramBot(token, { polling: false });
-
-// Get the last update with offset: -1
-tempBot.getUpdates({ offset: -1 }).then(updates => {
-	// Get the last update id
-	const lastUpdateId = updates[0].update_id;
-
-	// Set the offset to the last update id plus one
-	const offset = lastUpdateId + 1;
-
-	// Run ngrok on port 3000
-	ngrok.connect(3000).then(url => {
+// Define an async function to run ngrok and bot
+async function run() {
+	try {
+		// Run ngrok on port 3000 and wait for the URL
+		const url = await ngrok.connect(3000);
 		// Get the URL from ngrok
 		console.log(`Ngrok URL: ${url}`);
 		// Use the URL in the bot code
-		// Create a bot that uses 'polling' to fetch new updates with the offset
-		const bot = new TelegramBot(token, { polling: true, offset: offset });
+		// Create a bot that uses 'polling' to fetch new updates
+		const bot = new TelegramBot(token, { polling: true });
 
 		// Set the webhook with the ngrok URL
 		bot.setWebHook(`${url}/bot${bot.token}`);
@@ -51,8 +43,12 @@ tempBot.getUpdates({ offset: -1 }).then(updates => {
 				}
 			});
 		});
-	}).catch(err => {
+	} catch (err) {
 		// Handle errors
-		console.error(`Ngrok error: ${err.message}`);
-	});
-})
+		console.error(`Error: ${err.message}`);
+	}
+}
+
+// Call the async function
+run();
+
