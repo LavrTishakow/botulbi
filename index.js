@@ -8,7 +8,7 @@ const token = '6756665185:AAEFnWozMhj7FTNqIAiyeTv8O8DZ-4LojWw';
 async function run() {
 	try {
 		// Run ngrok on port 3000 and wait for the URL
-		const url = await ngrok.connect(3000);
+		let url = await ngrok.connect(3000); // ждет, пока Promise не будет выполнен
 		// Get the URL from ngrok
 		console.log(`Ngrok URL: ${url}`);
 		// Use the URL in the bot code
@@ -27,8 +27,8 @@ async function run() {
 			if (text === '/start') {
 				await bot.sendMessage(chatId, 'Ниже появится кнопка, заполни форму', {
 					reply_markup: {
-						inline_keyboard: [
-							[{ text: 'Заполнить форму', web_app: { url: webAppUrl + '/form' } }]
+						keyboard: [
+							[{ text: 'Заполнить форму', web_app: { url: url + '/form' } }]
 						]
 					}
 				})
@@ -38,17 +38,34 @@ async function run() {
 			await bot.sendMessage(chatId, 'Received your message. Visit my web app here: ', {
 				reply_markup: {
 					inline_keyboard: [
-						[{ text: 'Сделать заказ', web_app: { url: webAppUrl } }]
+						[{ text: 'Сделать заказ', web_app: { url: url } }]
 					]
 				}
 			});
+
+			// Move the if block inside the message callback function
+			if (msg?.web_app_data?.data) {
+				try {
+					const data = JSON.parse(msg?.web_app_data?.data)
+
+					await bot.sendMessage(chatId, 'Спасибо за обратную связь!')
+					await bot.sendMessage(chatId, 'Ваша страна: ' + data?.country);
+					await bot.sendMessage(chatId, 'Ваша улица: ' + data?.street);
+
+					setTimeout(async () => {
+						await bot.sendMessage(chatId, 'Спасибо' + data?.street);
+					}, 3000)
+				} catch (e) {
+					console.log(e);
+				}
+
+			}
 		});
-	} catch (err) {
+	} catch (err) { // Add a catch block here
 		// Handle errors
 		console.error(`Error: ${err.message}`);
 	}
-}
+} // End of the run function
 
 // Call the async function
 run();
-
